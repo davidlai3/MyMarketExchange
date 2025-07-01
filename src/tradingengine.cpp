@@ -5,7 +5,10 @@
 
 TradingEngine::TradingEngine() : logger("trading_engine.log") {}
 
-OrderID TradingEngine::submitOrder(const std::string& symbol, Side side, double price, int quantity) {
+OrderID TradingEngine::submitOrder(const char* symbol, Side side, double price, int quantity) {
+    // Only one thread can submit order at a time
+    std::lock_guard<std::mutex> lock{mtx};
+
     OrderID id = nextOrderID++;
     uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()

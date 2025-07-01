@@ -1,57 +1,66 @@
-#include <iostream>
-#include <thread>
-#include <vector>
-#include <cstring>
-#include <unistd.h>
+#include "../include/server.hpp"
+
 #include <netinet/in.h>
+#include <unistd.h>
+#include <iostream>
+#include <string.h>
 
-#define PORT 8080
-#define MAX_CLIENTS 10
-
-void handle_client(int client_socket) {
-    char buffer[1024] = {0};
-    while (true) {
-        int valread = read(client_socket, buffer, 1024);
-        if (valread <= 0) break;
-        std::cout << "Client: " << buffer << std::endl;
-        send(client_socket, buffer, strlen(buffer), 0);  // echo
-        memset(buffer, 0, sizeof(buffer));
-    }
-    close(client_socket);
-}
-
-int main() {
-    int server_fd, client_socket;
+TradingServer::TradingServer(int port, TradingEngine &engine) : engine(engine), running(true) {
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
     std::vector<std::thread> threads;
 
     // Create socket file descriptor
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket < 0) {
+        std::cerr << "Socket creation failed\n";
+        exit(1);
+    }
+    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    address.sin_port = htons(port);
 
-    int res = bind(server_fd, (struct sockaddr *)&address, sizeof(address));
+    int res = bind(server_socket, (struct sockaddr *)&address, sizeof(address));
     if (res < 0) {
         std::cerr << "Bind failed\n";
-        return -1;
+        exit(1);
     }
-    listen(server_fd, MAX_CLIENTS);
-
-    std::cout << "Server is listening on port " << PORT << "...\n";
-
-    while (true) {
-        client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
-        std::cout << "Accepted a new client\n";
-        threads.emplace_back(std::thread(handle_client, client_socket));
-        threads.back().detach(); // Or join later if you want to wait for them
+    if (listen(server_socket, MAX_CLIENTS) < 0) {
+        std::cerr << "Listen failed\n";
+        exit(1);
     }
 
-    close(server_fd);
-    return 0;
+    std::cout << "Server initialized on " << port << "\n";
+};
+
+
+void TradingServer::start() {
+    std::cout << "Listening for clients...\n";
+    while (running) {
+        int client = accept(server_socket, nullptr, nullptr);
+        if (client >= 0) {
+            client_threads.emplace_back(&TradingServer::handle_client, this, client);
+        }
+    }
+
+    for (auto &t : client_threads) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
 }
 
+
+void TradingServer::handle_client(int client_socket) {
+    while (true) {
+        char order_buffer[sizeof(OrderPacket)];
+        recv(client_socket, order_buffer, sizeof(OrderPacket), 0);
+
+        OrderPacket pkt = OrderPacket::deserialize(order_buffer);
+
+        engine.submitOrder(pkt.symbol, pkt.side, pkt.price, pkt.quantity);
+    }
+}

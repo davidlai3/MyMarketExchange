@@ -6,10 +6,11 @@
 class TradingEngine {
     public:
         TradingEngine();
-        OrderID submitOrder(const std::string& symbol, Side side, double price, int quantity);
+        OrderID submitOrder(const char*, Side side, double price, int quantity);
         bool cancelOrder(OrderID id);
         void printOrderBook();
     private:
+        std::mutex mtx;
         OrderBook book;
         OrderID nextOrderID = 1;
         Logger logger;
