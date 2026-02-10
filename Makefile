@@ -31,6 +31,11 @@ all: server client
 server: $(SERVER_EXE)
 client: $(CLIENT_EXE)
 
+# Debug build: append flags, then rebuild
+debug: CXXFLAGS += -g -O0 -DDEBUG -fsanitize=address,undefined -fno-omit-frame-pointer
+debug: LDFLAGS  += -fsanitize=address,undefined
+debug: clean all
+
 # Link rules
 $(SERVER_EXE): $(SERVER_OBJS)
 	@mkdir -p $(BIN_DIR)

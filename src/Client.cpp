@@ -1,6 +1,7 @@
 #include "../include/Client.h"
 #include "../include/Types.h"
 #include "../include/OrderProtocol.h"
+#include "../include/Debug.h"
 #include <arpa/inet.h>
 #include <iostream>
 #include <netinet/in.h>
@@ -38,6 +39,7 @@ void Client::setup_socket() {
 }
 
 void Client::run() {
+    debug("[Client]: Sending order");
     // Sending data
     Order o{Side::BUY, 100, 10};
     OrderProtocol::send_order(connect_fd, o);

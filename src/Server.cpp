@@ -1,5 +1,6 @@
 #include "../include/Server.h"
 #include "../include/OrderProtocol.h"
+#include "../include/Debug.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -47,7 +48,7 @@ void Server::setup_socket() {
         std::exit(EXIT_FAILURE);
     }
 
-    std::cout << "Server listening on port " << port << "\n";
+    std::cout << "[Server]: Listening on port " << port << "\n";
 }
 
 void Server::run() {
@@ -74,11 +75,15 @@ void Server::accept_loop() {
 void Server::handle_client(int client_fd) {
     // Server should indefinitely loop and read from client connection
 
+    debug("[Server]: Spinning up thread for client with fd " << client_fd);
+
     Order o;
 
     while (OrderProtocol::recv_order(client_fd, o)) {
         exchange.submit_order(o);
     }
+
+    debug("[Server]: Closing client with fd " << client_fd);
 
     close(client_fd);
 }

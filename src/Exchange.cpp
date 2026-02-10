@@ -1,4 +1,5 @@
 #include "../include/Exchange.h"
+#include "../include/Debug.h"
 
 Exchange& Exchange::instance() {
     static Exchange ex;
@@ -16,6 +17,9 @@ void Exchange::shutdown() {
 // Order handling
 
 bool Exchange::submit_order(const Order& o) {
+
+    debug("[Exchange]: " << (o.side == Side::BUY ? "BUY" : "SELL") << " for " 
+            << o.price << " at " << o.volume);
 
     std::lock_guard<std::mutex> lock(mtx);
 
