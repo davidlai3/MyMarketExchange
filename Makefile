@@ -1,34 +1,49 @@
-# Compiler
-CXX = g++
-CXXFLAGS = -std=c++20 -Wall -Wextra -O2 -Iinclude
+CXX      := g++
+CXXFLAGS := -std=c++20 -Wall -Wextra -O2 -Iinclude
+LDFLAGS  :=
+LDLIBS   :=
 
-# Directories
-SRC_DIR = src
-OBJ_DIR = bin
+BIN_DIR  := bin
+OBJ_DIR  := build
+SRC_DIR  := src
 
-# Target executable
-TARGET = bin/MyMarketExchange
+SERVER_EXE := $(BIN_DIR)/server
+CLIENT_EXE := $(BIN_DIR)/client
 
-# Source files
-SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
+# ---- pick which .cpp files belong to each executable ----
+SERVER_SRCS := $(SRC_DIR)/main_server.cpp \
+               $(SRC_DIR)/Server.cpp \
+               $(SRC_DIR)/Exchange.cpp \
+               $(SRC_DIR)/Orderbook.cpp \
+               $(SRC_DIR)/OrderProtocol.cpp
+
+CLIENT_SRCS := $(SRC_DIR)/main_client.cpp \
+               $(SRC_DIR)/Client.cpp \
+               $(SRC_DIR)/OrderProtocol.cpp
 
 # Convert src/foo.cpp -> build/foo.o
-OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
+SERVER_OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SERVER_SRCS))
+CLIENT_OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(CLIENT_SRCS))
 
-# Default rule
-all: $(TARGET)
+.PHONY: all server client clean
+all: server client
 
-# Link
-$(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $^ -o $@
+server: $(SERVER_EXE)
+client: $(CLIENT_EXE)
 
-# Compile
+# Link rules
+$(SERVER_EXE): $(SERVER_OBJS)
+	@mkdir -p $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+
+$(CLIENT_EXE): $(CLIENT_OBJS)
+	@mkdir -p $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+
+# Compile rule (shared)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean
 clean:
-	rm -rf $(OBJ_DIR) $(TARGET)
-
-.PHONY: all clean
+	rm -rf $(OBJ_DIR) $(BIN_DIR)

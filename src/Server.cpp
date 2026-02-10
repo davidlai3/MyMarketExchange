@@ -20,7 +20,7 @@ Server::~Server() {
 }
 
 void Server::setup_socket() {
-    listen_fd = ::socket(AF_INET, SOCK_STREAM, 0);
+    listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd < 0) {
         perror("socket");
         std::exit(EXIT_FAILURE);
@@ -59,7 +59,7 @@ void Server::accept_loop() {
         sockaddr_in client_addr{};
         socklen_t client_len = sizeof(client_addr);
 
-        int client_fd = ::accept(listen_fd, (sockaddr*)&client_addr, &client_len);
+        int client_fd = accept(listen_fd, (sockaddr*)&client_addr, &client_len);
         if (client_fd < 0) {
             perror("accept");
             continue;

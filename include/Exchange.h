@@ -29,7 +29,7 @@ public:
     // Evict all users
     void shutdown();
 
-    // Order handling
+    // Order handling (MUST BE THREAD SAFE)
 
     bool submit_order(const Order& o);
     bool cancel_order(uint32_t order_id);
